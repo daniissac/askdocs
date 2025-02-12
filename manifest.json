@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "AskDocs",
+    "version": "1.0",
+    "description": "AI-powered documentation assistant using Google Gemini",
+    "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+    ],
+    "host_permissions": [
+    "https://generativelanguage.googleapis.com/*",
+    "<all_urls>"
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [{
+      "matches": ["<all_urls>"],
+      "js": ["content-extractor.js"]
+    }],
+    "icons": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  }

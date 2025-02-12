@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AskDocs</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="setup-view" class="setup-container">
+    <h2>Welcome to AskDocs!</h2>
+    <p>Please enter your Google Gemini API key to get started:</p>
+    <input type="text" id="api-key" placeholder="Enter API key">
+    <div id="setup-error" class="error"></div>
+    <button id="save-key" class="button">Save & Continue</button>
+  </div>
+
+  <div id="chat-view" class="container" style="display: none;">
+    <div class="sidebar">
+      <button id="new-chat" class="button" style="width: 100%; margin-bottom: 10px;">New Chat</button>
+      <div id="conversation-list"></div>
+    </div>
+    
+    <div class="main-content">
+      <div id="messages" class="messages-container"></div>
+      <div class="input-container">
+        <textarea 
+          id="user-input" 
+          class="input-box" 
+          placeholder="Ask about the documentation..."
+          rows="3"
+        ></textarea>
+        <button id="send" class="button">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">
+    Processing...
+  </div>
+
+  <script src="content-extractor.js"></script>
+  <script src="conversation-manager.js"></script>
+  <script src="gemini-service.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
