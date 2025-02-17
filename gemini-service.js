@@ -1,80 +1,90 @@
 class GeminiService {
     constructor(apiKey) {
-      this.apiKey = apiKey;
-      this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+        this.apiKey = apiKey;
+        this.baseUrl = 'https://generativelanguage.googleapis.com/v1';
+        this.systemPrompt = `You are a documentation assistant. Provide concise answers based on the documentation. Use markdown for code and lists. If information isn't available, say so clearly.`;
     }
-  
-    async generateResponse(prompt, context = '') {
-      try {
-        console.log('Sending request with prompt:', prompt, 'and context:', context);
-        
-        const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Context: ${context}\n\nQuestion: ${prompt}\n\nPlease provide a helpful response based on the context above.`
-              }]
-            }],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 40,
-              topP: 0.95,
-              maxOutputTokens: 1024,
-            },
-            safetySettings: [
-              {
-                category: "HARM_CATEGORY_HARASSMENT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_HATE_SPEECH",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              },
-              {
-                category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                threshold: "BLOCK_MEDIUM_AND_ABOVE"
-              }
-            ]
-          })
-        });
-  
-        console.log('Raw response:', response);
-  
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error response:', errorText);
-          throw new Error(`API Error: ${response.status} - ${errorText}`);
+
+    getBaseUrl(url) {
+        try {
+            const urlObj = new URL(url);
+            return urlObj.origin + urlObj.pathname.split('/').slice(0, -1).join('/');
+        } catch (error) {
+            console.error('URL parsing error:', error);
+            return url;
         }
-  
-        const data = await response.json();
-        console.log('Parsed response data:', data);
-  
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
-          console.error('Invalid response structure:', data);
-          throw new Error('Invalid response format from API');
-        }
-  
-        const textResponse = data.candidates[0].content.parts[0].text;
-        console.log('Extracted response text:', textResponse);
-  
-        if (!textResponse) {
-          throw new Error('Empty response from API');
-        }
-  
-        return textResponse;
-  
-      } catch (error) {
-        console.error('Error in generateResponse:', error);
-        throw error;
-      }
     }
-  }
-  
+
+    async generateResponse(userQuery, documentationUrl) {
+        const baseDocUrl = this.getBaseUrl(documentationUrl);
+        const prompt = `Documentation Base URL: ${baseDocUrl}
+Current Page: ${documentationUrl}
+
+Question: ${userQuery}
+
+Provide a focused answer. Use markdown formatting where appropriate.`;
+
+        try {
+            const response = await fetch(`${this.baseUrl}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: this.systemPrompt + '\n\n' + prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.3,
+                        topK: 20,
+                        topP: 0.8,
+                        maxOutputTokens: 1024,
+                    },
+                    safetySettings: [
+                        {
+                            category: "HARM_CATEGORY_HARASSMENT",
+                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                if (errorData.error?.message?.includes('Resource has been exhausted')) {
+                    throw new Error('API quota exceeded. Please try again later or check your API limits.');
+                }
+                throw new Error(errorData.error?.message || 'API request failed');
+            }
+
+            const data = await response.json();
+            
+            if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                throw new Error('Invalid response format from API');
+            }
+
+            return data.candidates[0].content.parts[0].text;
+        } catch (error) {
+            console.error('Gemini API error:', error);
+            if (error.message.includes('quota')) {
+                throw new Error('API quota exceeded. Please try again later.');
+            }
+            throw new Error('Failed to generate response. Please check your API key or try again later.');
+        }
+    }
+
+    async validateApiKey() {
+        try {
+            const testResponse = await this.generateResponse('test', 'https://example.com/docs');
+            return !!testResponse;
+        } catch (error) {
+            console.error('API key validation failed:', error);
+            if (error.message.includes('quota')) {
+                throw new Error('API quota exceeded. Please try again later.');
+            }
+            throw new Error('Invalid API key or API access error. Please check your API key.');
+        }
+    }
+}

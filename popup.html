@@ -8,7 +8,15 @@
   <div id="setup-view" class="setup-container">
     <h2>Welcome to AskDocs!</h2>
     <p>Please enter your Google Gemini API key to get started:</p>
-    <input type="text" id="api-key" placeholder="Enter API key">
+    <div class="api-key-container">
+        <input type="text" id="api-key" placeholder="Enter API key">
+        <a href="https://makersuite.google.com/app/apikey" 
+           target="_blank" 
+           class="get-api-link"
+           title="Get your Gemini API key">
+           Get API Key
+        </a>
+    </div>
     <div id="setup-error" class="error"></div>
     <button id="save-key" class="button">Save & Continue</button>
   </div>
@@ -34,10 +42,11 @@
   </div>
 
   <div id="loading" class="loading">
-    Processing...
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Scanning documentation...</div>
+    <div class="loading-subtext">This might take a moment as we check related pages</div>
   </div>
 
-  <script src="content-extractor.js"></script>
   <script src="conversation-manager.js"></script>
   <script src="gemini-service.js"></script>
   <script src="popup.js"></script>
